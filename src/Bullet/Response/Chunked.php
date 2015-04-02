@@ -86,10 +86,13 @@ class Chunked extends \Bullet\Response
     /**
      * This is bad, such response cannot be converted to
      * a string.
+     * 
+     * Always return empty string, but use send() as a side-effect.
      */
     public function __toString()
     {
-        throw new Exception("Chunked responses must be sent with the send() method, not through __toString().");
+        $this->send();
+        return "";
     }
 
 }
