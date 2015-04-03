@@ -13,8 +13,3 @@ before_script:
 
 # Script to run tests
 script: phpunit
-
-matrix:
-  allow_failures:
-    - php: hhvm
-
