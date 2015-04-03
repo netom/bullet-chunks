@@ -25,7 +25,12 @@ class Chunked extends \Bullet\Response
      * chunk.
      */
     public $chunkSize = 4096;
-    protected $_content = ['this', 'is', 'something', 'that', 'can', 'be', 'sent', 'chunked'];
+    protected $_items;
+
+    public function __construct($items, $status = 200) {
+        parent::__construct('', $status);
+        $this->_items = $items;
+    }
 
     protected function _sendChunk($buf) {
         printf("%x\r\n%s\r\n", strlen($buf), $buf);
@@ -63,7 +68,7 @@ class Chunked extends \Bullet\Response
         }
 
         if ($this->chunkSize <= 0) {
-            foreach ($this->_content as $chunk) {
+            foreach ($this->_items as $chunk) {
                 $this->_sendChunk((string) $chunk); // Just send chunks as they are, no need to buffer around.
             }
             // Emit a zero-length closing chunk
@@ -71,7 +76,7 @@ class Chunked extends \Bullet\Response
         } else {
             // Everyday I'm buffering...
             $buf = '';
-            foreach ($this->_content as $chunk) {
+            foreach ($this->_items as $chunk) {
                 $buf .= (string) $chunk; // Grow the buffer
                 $this->_sendChunks($buf, $this->chunkSize); // Emit whole chunks. Might leave a partial chunk behind in $buf.
             }
