@@ -7,13 +7,10 @@ class ChunkedTest extends PHPUnit_Framework_TestCase {
         "lazy ", "dog."
     ];
 
-    private function _runTestBulletApp($chunkSize) {
-        $testobj = $this;
-
+    private function _runTestBulletApp($chunkSize, $content) {
         $app = new Bullet\App();
-
-        $app->path('/test', function($request) use ($chunkSize, $testobj) {
-            $c = new Bullet\Response\Chunked($testobj->_testContent);
+        $app->path('/test', function($request) use ($chunkSize, $content) {
+            $c = new Bullet\Response\Chunked($content);
             $c->chunkSize = $chunkSize;
             return $c;
         });
@@ -30,7 +27,7 @@ class ChunkedTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testNonBufferedChunkedEncoding() {
-        $output = $this->_runTestBulletApp(0);
+        $output = $this->_runTestBulletApp(0, $this->_testContent);
 
         $shouldBe = '';
         foreach ($this->_testContent as $word) {
@@ -44,7 +41,7 @@ class ChunkedTest extends PHPUnit_Framework_TestCase {
     public function testBufferedChunkedEncoding() {
         $CHUNKSIZE = 10;
 
-        $output = $this->_runTestBulletApp($CHUNKSIZE);
+        $output = $this->_runTestBulletApp($CHUNKSIZE, $this->_testContent);
 
         $shouldBe = '';
         foreach (str_split(implode('', $this->_testContent), $CHUNKSIZE) as $word) {
@@ -55,4 +52,28 @@ class ChunkedTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($shouldBe, $output);
     }
 
+    public function testGeneratorFunction() {
+        $CHUNKSIZE = 10;
+
+        $content = function () {
+            for ($i = 0; $i < 5; $i++) {
+                yield "xxxxx";
+            }
+        };
+
+        $output = $this->_runTestBulletApp(10, $content());
+
+        $strcontent = '';
+        foreach ($content() as $piece) {
+            $strcontent .= $piece;
+        }
+
+        $shouldBe = '';
+        foreach (str_split($strcontent, $CHUNKSIZE) as $word) {
+            $shouldBe .= sprintf("%x\r\n%s\r\n", strlen($word), $word);
+        }
+        $shouldBe .= "0\r\n\r\n";
+
+        $this->assertEquals($shouldBe, $output);
+    }
 }
