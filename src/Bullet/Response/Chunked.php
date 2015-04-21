@@ -34,6 +34,7 @@ class Chunked extends \Bullet\Response
 
     protected function _sendChunk($buf) {
         printf("%x\r\n%s\r\n", strlen($buf), $buf);
+        flush(); // HHVM doesn't do implicit flush, it eats all memory instead. Nice.
     }
 
     /**
